@@ -1,8 +1,15 @@
 // @ts-check
 
-import { describe, expect, it, jest } from "@jest/globals";
+import {
+  afterAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+} from "@jest/globals";
 import "@testing-library/jest-dom";
-import { RETRIES, retryer } from "../src/common/retryer.js";
+import { RETRIES, getToken, retryer } from "../src/common/retryer.js";
 import { logger } from "../src/common/log.js";
 
 const fetcher = jest.fn((variables, token) => {
@@ -79,5 +86,39 @@ describe("Test Retryer", () => {
       // @ts-ignore
       expect(err.message).toBe("Downtime due to GitHub API rate limiting");
     }
+  });
+});
+
+describe("Test getToken", () => {
+  const ORIGINAL_ENV = process.env;
+
+  beforeEach(() => {
+    process.env = { ...ORIGINAL_ENV };
+    delete process.env.PAT_1;
+    delete process.env.PAT_2;
+    delete process.env.TOKEN;
+  });
+
+  afterAll(() => {
+    process.env = ORIGINAL_ENV;
+  });
+
+  it("falls back to TOKEN for the first attempt when no PAT_n is set", () => {
+    process.env.TOKEN = "token-value";
+
+    expect(getToken(0)).toBe("token-value");
+  });
+
+  it("prefers PAT_1 over TOKEN when both are set", () => {
+    process.env.PAT_1 = "pat-value";
+    process.env.TOKEN = "token-value";
+
+    expect(getToken(0)).toBe("pat-value");
+  });
+
+  it("does not fall back to TOKEN for retries beyond the first", () => {
+    process.env.TOKEN = "token-value";
+
+    expect(getToken(1)).toBeUndefined();
   });
 });

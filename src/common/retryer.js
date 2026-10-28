@@ -6,10 +6,22 @@ import { logger } from "./log.js";
 // Script variables.
 
 // Count the number of GitHub API tokens available.
-const PATs = Object.keys(process.env).filter((key) =>
-  /PAT_\d*$/.exec(key),
-).length;
+// Falls back to a single TOKEN var when no PAT_n vars are set.
+const PATs =
+  Object.keys(process.env).filter((key) => /PAT_\d*$/.exec(key)).length ||
+  (process.env.TOKEN ? 1 : 0);
 const RETRIES = process.env.NODE_ENV === "test" ? 7 : PATs;
+
+/**
+ * Resolve the token for a given 0-indexed retry attempt, falling back to
+ * TOKEN for the first attempt when no PAT_n vars are set.
+ *
+ * @param {number} index The 0-indexed retry attempt.
+ * @returns {string|undefined} The resolved token.
+ */
+const getToken = (index) =>
+  process.env[`PAT_${index + 1}`] ??
+  (index === 0 ? process.env.TOKEN : undefined);
 
 /**
  * @typedef {import("axios").AxiosResponse} AxiosResponse Axios response.
@@ -41,7 +53,7 @@ const retryer = async (fetcher, variables, retries = 0) => {
     let response = await fetcher(
       variables,
       // @ts-ignore
-      process.env[`PAT_${retries + 1}`],
+      getToken(retries),
       // used in tests for faking rate limit
       retries,
     );
@@ -93,5 +105,5 @@ const retryer = async (fetcher, variables, retries = 0) => {
   }
 };
 
-export { retryer, RETRIES };
+export { retryer, RETRIES, getToken };
 export default retryer;
