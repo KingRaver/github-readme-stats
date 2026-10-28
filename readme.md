@@ -973,6 +973,8 @@ If you are on the [Pro (i.e. paid)](https://vercel.com/pricing) Vercel plan, the
 9.  Create a Personal Access Token (PAT) as described in the [previous section](#first-step-get-your-personal-access-token-pat).
 10. Add the PAT as an environment variable named `PAT_1` (as shown).
     ![](https://files.catbox.moe/0yclio.png)
+    - If no `PAT_n` variable is set, a single `TOKEN` variable is used as a fallback for the
+      first request.
 11. Click deploy, and you're good to go. See your domains to use the API!
 
 </details>
