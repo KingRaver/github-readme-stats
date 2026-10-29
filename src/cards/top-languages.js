@@ -18,6 +18,8 @@ const DEFAULT_LANG_COLOR = "#858585";
 const CARD_PADDING = 25;
 const COMPACT_LAYOUT_BASE_HEIGHT = 90;
 const MAXIMUM_LANGS_COUNT = 20;
+const DEFAULT_COMPACT_LAYOUT_COLUMNS = 2;
+const MAX_COMPACT_LAYOUT_COLUMNS = 4;
 
 const NORMAL_LAYOUT_DEFAULT_LANGS_COUNT = 5;
 const COMPACT_LAYOUT_DEFAULT_LANGS_COUNT = 6;
@@ -107,10 +109,14 @@ const getCircleLength = (radius) => {
  * Calculates height for the compact layout.
  *
  * @param {number} totalLangs Total number of languages.
+ * @param {number=} columns Number of columns the languages are laid out in.
  * @returns {number} Card height.
  */
-const calculateCompactLayoutHeight = (totalLangs) => {
-  return COMPACT_LAYOUT_BASE_HEIGHT + Math.round(totalLangs / 2) * 25;
+const calculateCompactLayoutHeight = (
+  totalLangs,
+  columns = DEFAULT_COMPACT_LAYOUT_COLUMNS,
+) => {
+  return COMPACT_LAYOUT_BASE_HEIGHT + Math.ceil(totalLangs / columns) * 25;
 };
 
 /**
@@ -306,9 +312,12 @@ const createLanguageTextNode = ({
   totalSize,
   hideProgress,
   statsFormat,
+  columns = DEFAULT_COMPACT_LAYOUT_COLUMNS,
+  width,
 }) => {
   const longestLang = getLongestLang(langs);
-  const chunked = chunkArray(langs, langs.length / 2);
+  const perColumn = Math.ceil(langs.length / columns);
+  const chunked = chunkArray(langs, perColumn);
   const layouts = chunked.map((array) => {
     // @ts-ignore
     const items = array.map((lang, index) =>
@@ -330,9 +339,18 @@ const createLanguageTextNode = ({
   const percent = ((longestLang.size / totalSize) * 100).toFixed(2);
   const minGap = 150;
   const maxGap = 20 + measureText(`${longestLang.name} ${percent}%`, 11);
+  // The default two-column layout spaces columns by the widest label. With more
+  // columns that gap overflows the card, so distribute the available width
+  // evenly across the columns instead (with a floor so labels stay legible).
+  const gap =
+    columns > DEFAULT_COMPACT_LAYOUT_COLUMNS && width
+      ? Math.max((width - 50) / columns, 110)
+      : maxGap < minGap
+        ? minGap
+        : maxGap;
   return flexLayout({
     items: layouts,
-    gap: maxGap < minGap ? minGap : maxGap,
+    gap,
   }).join("");
 };
 
@@ -396,6 +414,7 @@ const renderNormalLayout = (langs, width, totalLanguageSize, statsFormat) => {
  * @param {number} totalLanguageSize Total size of all languages.
  * @param {boolean=} hideProgress Whether to hide progress bar.
  * @param {string} statsFormat Stats format.
+ * @param {number=} columns Number of columns to lay the languages out in.
  * @returns {string} Compact layout card SVG object.
  */
 const renderCompactLayout = (
@@ -404,6 +423,7 @@ const renderCompactLayout = (
   totalLanguageSize,
   hideProgress,
   statsFormat = "percentages",
+  columns = DEFAULT_COMPACT_LAYOUT_COLUMNS,
 ) => {
   const paddingRight = 50;
   const offsetWidth = width - paddingRight;
@@ -451,6 +471,8 @@ const renderCompactLayout = (
         totalSize: totalLanguageSize,
         hideProgress,
         statsFormat,
+        columns,
+        width,
       })}
     </g>
   `;
@@ -798,7 +820,10 @@ const renderTopLanguages = (topLangs, options = {}) => {
     border_color,
     disable_animations,
     stats_format = "percentages",
+    columns = DEFAULT_COMPACT_LAYOUT_COLUMNS,
   } = options;
+
+  const compactColumns = clampValue(columns, 1, MAX_COMPACT_LAYOUT_COLUMNS);
 
   const i18n = new I18n({
     locale,
@@ -811,13 +836,22 @@ const renderTopLanguages = (topLangs, options = {}) => {
     hide,
   );
 
+  const isCompact = layout === "compact" || hide_progress == true;
+  // Widen the default canvas so extra compact columns have room to spread.
+  const defaultWidth =
+    isCompact && compactColumns > DEFAULT_COMPACT_LAYOUT_COLUMNS
+      ? Math.round(
+          (DEFAULT_CARD_WIDTH * compactColumns) /
+            DEFAULT_COMPACT_LAYOUT_COLUMNS,
+        )
+      : DEFAULT_CARD_WIDTH;
   let width = card_width
     ? isNaN(card_width)
-      ? DEFAULT_CARD_WIDTH
+      ? defaultWidth
       : card_width < MIN_CARD_WIDTH
         ? MIN_CARD_WIDTH
         : card_width
-    : DEFAULT_CARD_WIDTH;
+    : defaultWidth;
   let height = calculateNormalLayoutHeight(langs.length);
 
   // returns theme based colors with proper overrides and defaults
@@ -849,7 +883,8 @@ const renderTopLanguages = (topLangs, options = {}) => {
     );
   } else if (layout === "compact" || hide_progress == true) {
     height =
-      calculateCompactLayoutHeight(langs.length) + (hide_progress ? -25 : 0);
+      calculateCompactLayoutHeight(langs.length, compactColumns) +
+      (hide_progress ? -25 : 0);
 
     finalLayout = renderCompactLayout(
       langs,
@@ -857,6 +892,7 @@ const renderTopLanguages = (topLangs, options = {}) => {
       totalLanguageSize,
       hide_progress,
       stats_format,
+      compactColumns,
     );
   } else if (layout === "donut") {
     height = calculateDonutLayoutHeight(langs.length);

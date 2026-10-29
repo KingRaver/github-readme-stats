@@ -562,6 +562,60 @@ describe("Test renderTopLanguages", () => {
     );
   });
 
+  it("should render compact layout with a custom number of columns", () => {
+    const eightLangs = {
+      HTML: { color: "#0f0", name: "HTML", size: 800 },
+      javascript: { color: "#0ff", name: "javascript", size: 700 },
+      css: { color: "#ff0", name: "css", size: 600 },
+      python: { color: "#00f", name: "python", size: 500 },
+      rust: { color: "#f0f", name: "rust", size: 400 },
+      go: { color: "#0a0", name: "go", size: 300 },
+      shell: { color: "#a0a", name: "shell", size: 200 },
+      ruby: { color: "#aa0", name: "ruby", size: 100 },
+    };
+
+    // Two columns (default): 4 rows tall, default width.
+    document.body.innerHTML = renderTopLanguages(eightLangs, {
+      layout: "compact",
+      langs_count: 8,
+    });
+    expect(queryAllByTestId(document.body, "lang-name")).toHaveLength(8);
+    expect(document.querySelector("svg")).toHaveAttribute("width", "300");
+    expect(document.querySelector("svg")).toHaveAttribute("height", "190");
+
+    // Four columns: same languages, 2 rows tall, wider default canvas.
+    document.body.innerHTML = renderTopLanguages(eightLangs, {
+      layout: "compact",
+      columns: 4,
+      langs_count: 8,
+    });
+    expect(queryAllByTestId(document.body, "lang-name")).toHaveLength(8);
+    expect(document.querySelector("svg")).toHaveAttribute("width", "600");
+    expect(document.querySelector("svg")).toHaveAttribute("height", "140");
+  });
+
+  it("should clamp the compact columns to the allowed maximum", () => {
+    const eightLangs = {
+      HTML: { color: "#0f0", name: "HTML", size: 800 },
+      javascript: { color: "#0ff", name: "javascript", size: 700 },
+      css: { color: "#ff0", name: "css", size: 600 },
+      python: { color: "#00f", name: "python", size: 500 },
+      rust: { color: "#f0f", name: "rust", size: 400 },
+      go: { color: "#0a0", name: "go", size: 300 },
+      shell: { color: "#a0a", name: "shell", size: 200 },
+      ruby: { color: "#aa0", name: "ruby", size: 100 },
+    };
+
+    // columns=99 clamps to 4, matching the four-column result above.
+    document.body.innerHTML = renderTopLanguages(eightLangs, {
+      layout: "compact",
+      columns: 99,
+      langs_count: 8,
+    });
+    expect(document.querySelector("svg")).toHaveAttribute("width", "600");
+    expect(document.querySelector("svg")).toHaveAttribute("height", "140");
+  });
+
   it("should render with layout donut", () => {
     document.body.innerHTML = renderTopLanguages(langs, { layout: "donut" });
 
