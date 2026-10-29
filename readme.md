@@ -533,6 +533,7 @@ You can customize the appearance and behavior of the top languages card using th
 | `layout` | Switches between five available layouts `normal` & `compact` & `donut` & `donut-vertical` & `pie`. | enum | `normal` |
 | `card_width` | Sets the card's width manually. | number | `300` |
 | `langs_count` | Shows more languages on the card, between 1-20. | integer | `5` for `normal` and `donut`, `6` for other layouts |
+| `columns` | Number of columns in the `compact` layout, between 1-4. | integer | `2` |
 | `exclude_repo` | Excludes specified repositories. | string (comma-separated values) | `null` |
 | `custom_title` | Sets a custom title for the card. | string | `Most Used Languages` |
 | `disable_animations` | Disables all animations in the card. | boolean | `false` |
@@ -595,6 +596,12 @@ You can use the `&layout=compact` option to change the card design.
 
 ```md
 ![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=anuraghazra&layout=compact)
+```
+
+You can use the `&columns=` option to set how many columns the `compact` layout lays the languages out in. Valid values are integers between 1 and 4 (inclusive); the default is `2`. More columns make the card wider and shorter — pair it with `&card_width=` (and usually a higher `&langs_count=`) so the columns have room.
+
+```md
+![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=anuraghazra&layout=compact&langs_count=12&columns=4&card_width=680)
 ```
 
 ### Donut Chart Language Card Layout

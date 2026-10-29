@@ -44,6 +44,7 @@ export type TopLangOptions = CommonOptions & {
   layout: "compact" | "normal" | "donut" | "donut-vertical" | "pie";
   custom_title: string;
   langs_count: number;
+  columns: number;
   disable_animations: boolean;
   hide_progress: boolean;
   stats_format: "percentages" | "bytes";
